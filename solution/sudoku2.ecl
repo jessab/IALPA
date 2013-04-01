@@ -9,6 +9,7 @@
 
 :- lib(ic).
 :- lib(listut).
+:-lib(propia).
 
 solve(ProblemName,B) :-
 	problem(ProblemName, Board),
@@ -20,24 +21,32 @@ sudoku(N, Numbers,B) :-
 	N2 is N*N,
 	N4 is N2*N2,
 	dim(Numbers, [N2,N2]),
-	Numbers[1..N2,1..N2] #:: 1..N4,
+	Numbers[1..N2,1..N2] #:: 0..N4 - 1,
+	term_variables(Numbers, Vars),
+	alldifferent(Vars),
 %	numbersOfBoard(Board,Numbers),
 	( for(I,1,N2), param(Numbers,N2,N) do
 		% The same number can't occur twice at the same position
 	    Row is Numbers[I,1..N2],
-	    alldifferent(Row), % redundant, but maybe usefull for propagation?
+		noSymmetricSolutions(Row),
 		onDifferentRowPositions(Row,N2),
 		onDifferentColumnPositions(Row,N2),
-		withinDifferentSquares(Row, N)	    
+		withinDifferentSquares(Row,N)
+		 		
 	),
-	term_variables(Numbers, Vars),
 	search(Vars, 0, input_order, indomain_max, complete, [backtrack(B)]).	
 
+
+noSymmetricSolutions(Row) :-
+	( fromto(Row, [X1,X2 | Xs], [X2 | Xs], [_X]) do
+		X1 #< X2
+	).
+	
 onDifferentRowPositions(Row,N) :-
 	( foreach(X,Row),foreach(RowPosition,RowPositions),
 	  param(N)
 		do
-			RowPosition #= (X) / N
+			RowPosition #= X div N infers most
 	),
 	allDifferentExpressions(RowPositions).
 	
@@ -46,7 +55,7 @@ onDifferentColumnPositions(Row, N) :-
 	( foreach(X,Row),foreach(ColumnPosition,ColumnPositions),
 	  param(N)
 		do
-			ColumnPosition #= X - N * (X / N) 
+			ColumnPosition #= X mod N infers most 
 			),
 	allDifferentExpressions(ColumnPositions).
 		
@@ -71,11 +80,11 @@ allDifferentExpressions(List) :-
 
 squarePositionExpression(Position, N, SquarePositionExpr) :-
 	N2 is N*N,
-	RowPositionExpr #= (Position - 1) div N2 + 1,
-	ColumnPositionExpr #= Position - N2 * (Position div N2),
-	RowSquareExpr #= (RowPositionExpr - 1) div N + 1 ,
-	ColumnSquareExpr #= (ColumnPositionExpr - 1) div N + 1,
-	SquarePositionExpr #= (RowSquareExpr - 1) * N + ColumnSquareExpr.
+	RowPositionExpr #= Position div N2 infers most,
+	ColumnPositionExpr #= Position mod N2 infers most,
+	RowSquareExpr #= RowPositionExpr div N infers most ,
+	ColumnSquareExpr #= ColumnPositionExpr div N infers most,
+	SquarePositionExpr #= RowSquareExpr * N + ColumnSquareExpr.
 
 	
 % Convert the known board information to the Numbers representation:
@@ -105,8 +114,8 @@ channelConstraints(Board, Numbers) :-
 	  param(Board,Numbers)
 		do
 			subscript(Numbers,[I,J],Position),
-			BoardRow #= (Position - 1) div N + 1,
-			BoardColumn #= (Position - 1) mod N + 1,
+			BoardRow #= Position div N,
+			BoardColumn #= Position mod N,
 			subscript(Board, [BoardRow, BoardColumn], I)
 	).
 	
