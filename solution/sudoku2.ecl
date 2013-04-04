@@ -89,7 +89,7 @@ squarePositionExpression(Position, N, SquarePositionExpr) :-
 	
 % Convert the known board information to the Numbers representation:
 %
-numbersOfBoard(Board, Numbers) :-
+channelConstraintsBoardToNumbers(Board, Numbers) :-
 	dim(Board,[N,N]),
 	dim(Numbers,[N,N]),
 	( for(I,1,N),
@@ -99,26 +99,6 @@ numbersOfBoard(Board, Numbers) :-
 			NumbersRow is Numbers[I,1..N],
 			collection_to_list(Positions,NumbersRow)
 	).
-	
-	
-%% TODO: won't work when values are unknown, may be use suspend and wake?
-% channelConstraints / 2 
-% Board : Matrix where the value of each element represent the number of the sudoku puzzle, the position of the element
-%			in the matrix is the same as the position of the number in the sudoku puzzle.
-% Numbers : Matrix where the value of each element represents the position of a number in the sudoku puzzle.
-%			I.e. the elements on row i represent the N different positions of the number i in the sudoku puzzle.
-% The predicate expresses the relation between the matrix elements.
-channelConstraints(Board, Numbers) :-
-	dim(Board,[N]),
-	( multifor([I,J],1,N),
-	  param(Board,Numbers)
-		do
-			subscript(Numbers,[I,J],Position),
-			BoardRow #= Position div N,
-			BoardColumn #= Position mod N,
-			subscript(Board, [BoardRow, BoardColumn], I)
-	).
-	
 	
 positionsNumber(I,Board,Positions) :-
 	dim(Board,[N,N]),
@@ -137,13 +117,24 @@ positionsNumber(I,Board,Positions) :-
 			)
 	),
 	term_variables(PositionsA,Positions).
-					
-				
 	
-	
-	
-	
-	
+%% TODO: won't work when values are unknown, may be use suspend and wake?
+% channelConstraints / 2 
+% Board : Matrix where the value of each element represent the number of the sudoku puzzle, the position of the element
+%			in the matrix is the same as the position of the number in the sudoku puzzle.
+% Numbers : Matrix where the value of each element represents the position of a number in the sudoku puzzle.
+%			I.e. the elements on row i represent the N different positions of the number i in the sudoku puzzle.
+% The predicate expresses the relation between the matrix elements.
+channelConstraintsNumbersToBoard(Board, Numbers) :-
+	dim(Board,[N]),
+	( multifor([I,J],1,N),
+	  param(Board,Numbers)
+		do
+			subscript(Numbers,[I,J],Position),
+			BoardRow #= Position div N,
+			BoardColumn #= Position mod N,
+			subscript(Board, [BoardRow, BoardColumn], I)
+	).
 
 print_board(Board) :-
 	dim(Board, [N,N]),
