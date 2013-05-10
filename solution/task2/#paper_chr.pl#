@@ -1,0 +1,6 @@
+:- use_module(library(chr)).
+:- chr_constraint leq/2.
+
+leq(X,X) <=> true.
+leq(X,Y), leq(Y,X) <=> X = Y.
+leq(X,Y), leq(Y,Z) ==> leq(X,Z).
